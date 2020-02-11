@@ -178,7 +178,7 @@ udpServer.on('message', function(message, remote) {
     try {		
 		messageObject = JSON.parse(message);
 		body = messageObject.data;
-        var data = JSON.parse(body);
+        data = JSON.parse(body);
         if (data.message == "ping") {
             return;
         }
