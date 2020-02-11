@@ -165,7 +165,6 @@ io.sockets.on('connection', function(socket) {
     });
 });
 
-var dgram = require('dgram');
 var udpServer = dgram.createSocket('udp4');
 
 udpServer.on('listening', function() {
