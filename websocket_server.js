@@ -174,10 +174,10 @@ udpServer.on('listening', function () {
 });
 
 udpServer.on('message', function (message, remote) {
+    console.log(message.toString());
     var messageObject, body;
     var data = {};
     try {
-        console.log(1);
         messageObject = JSON.parse(message);
         body = messageObject.data;
         data = JSON.parse(body);
@@ -185,26 +185,6 @@ udpServer.on('message', function (message, remote) {
             return;
         }
     } catch (e) {
-        var msg = message.toString('ascii');
-        console.log(2, msg);
-        try{
-            messageObject = JSON.parse(msg.slice(5, -1));
-            console.log('2-1', msg);
-            body = messageObject.data;
-            data = JSON.parse(body);
-            if (data.message == "ping") {
-                return;
-            }
-        }catch(e){
-            messageObject = JSON.parse(message);
-            console.log(3, messageObject);
-            body = messageObject.data;
-            data = JSON.parse(body);
-            if (data.message == "ping") {
-                return;
-            }
-
-        }
     }
     if (messageObject != null) {
         if (messageObject.scope == "alive") {
