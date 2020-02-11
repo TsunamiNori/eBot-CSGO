@@ -57,7 +57,7 @@ if (in_array(false, $check)) {
 if (!ini_get('date.timezone')) {
     $timezone = @date_default_timezone_get();
     echo '| Timezone is not set in php.ini. Please edit it and change/set "date.timezone" appropriately. '
-    . 'Setting to default: \'' . $timezone . '\'' . PHP_EOL;
+        . 'Setting to default: \'' . $timezone . '\'' . PHP_EOL;
     echo '-----------------------------------------------------' . PHP_EOL;
     date_default_timezone_set($timezone);
 }
@@ -67,7 +67,8 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 gc_enable();
 
-function handleShutdown() {
+function handleShutdown()
+{
     global $webSocketProcess;
 
     if (PHP_OS == "Linux")
@@ -85,32 +86,37 @@ register_shutdown_function('handleShutdown');
 
 error_reporting(E_ERROR);
 
-class LoggerArray extends Stackable {
+class LoggerArray extends Stackable
+{
 
-    public function run() {
-        
+    public function run()
+    {
+
     }
 
 }
 
-class LogReceiver extends Thread {
+class LogReceiver extends Thread
+{
 
     public $shared_array;
     public $botIp;
     public $botPort;
 
-    public function __construct($shared_array, $botIp, $botPort) {
+    public function __construct($shared_array, $botIp, $botPort)
+    {
         $this->shared_array = $shared_array;
         $this->botIp = $botIp;
         $this->botPort = $botPort;
         $this->start();
     }
 
-    public function run() {
+    public function run()
+    {
         $socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
         if ($socket) {
             if (socket_bind($socket, $this->botIp, $this->botPort)) {
-                
+
             } else {
                 echo "can't bind " . $this->botIp . ":" . $this->botPort . "\n";
                 return;
@@ -145,24 +151,13 @@ if ($config->getNodeStartupMethod() != "none") {
     // Starting ebot Websocket Server
     if (PHP_OS == "Linux") {
         echo "| Starting eBot Websocket-Server !" . PHP_EOL;
-        echo "| Using ".$config->getNodeStartupMethod().PHP_EOL;
+        echo "| Using " . $config->getNodeStartupMethod() . ' ' . APP_ROOT . 'websocket_server.js ' . \eBot\Config\Config::getInstance()->getBot_ip() . ' ' . \eBot\Config\Config::getInstance()->getBot_port() . ' ' . (\eBot\Config\Config::getInstance()->isSSLEnabled() ? 'TRUE' : 'FALSE') . ' ' . \eBot\Config\Config::getInstance()->getSSLCertificatePath() . ' ' . \eBot\Config\Config::getInstance()->getSSLKeyPath() . PHP_EOL;
         $descriptorspec = array(
             0 => array("pipe", "r"),
             1 => array("file", APP_ROOT . "logs" . DIRECTORY_SEPARATOR . "websocket.log", "a"),
             2 => array("file", APP_ROOT . "logs" . DIRECTORY_SEPARATOR . "websocket.error", "a")
         );
-	    $webSocketProcess = proc_open($config->getNodeStartupMethod() . ' ' . APP_ROOT . 'websocket_server.js ' . \eBot\Config\Config::getInstance()->getBot_ip() . ' ' . \eBot\Config\Config::getInstance()->getBot_port() . ' ' . (\eBot\Config\Config::getInstance()->isSSLEnabled() ? 'TRUE': 'FALSE') . ' ' . \eBot\Config\Config::getInstance()->getSSLCertificatePath() . ' ' . \eBot\Config\Config::getInstance()->getSSLKeyPath(), $descriptorspec, $pipes);
-        if (is_resource($webSocketProcess)) {
-            fclose($pipes[0]);
-            usleep(400000);
-            $status = proc_get_status($webSocketProcess);
-            if (!$status['running']) {
-                echo '| WebSocket server crashed' . PHP_EOL;
-                echo '-----------------------------------------------------' . PHP_EOL;
-                die();
-            }
-            echo "| WebSocket has been started" . PHP_EOL;
-        }
+        run_ebot_WS($config, $descriptorspec);
     } else {
         echo "| You are under windows, please run websocket_server.bat before starting ebot" . PHP_EOL;
         sleep(5);
@@ -170,7 +165,22 @@ if ($config->getNodeStartupMethod() != "none") {
 } else {
     echo "| WebSocket Server will be started manually!" . PHP_EOL;
 }
-
+function run_ebot_WS($config, $descriptorspec){
+    $webSocketProcess = proc_open($config->getNodeStartupMethod() . ' ' . APP_ROOT . 'websocket_server.js ' . \eBot\Config\Config::getInstance()->getBot_ip() . ' ' . \eBot\Config\Config::getInstance()->getBot_port() . ' ' . (\eBot\Config\Config::getInstance()->isSSLEnabled() ? 'TRUE' : 'FALSE') . ' ' . \eBot\Config\Config::getInstance()->getSSLCertificatePath() . ' ' . \eBot\Config\Config::getInstance()->getSSLKeyPath(), $descriptorspec, $pipes);
+    if (is_resource($webSocketProcess)) {
+        fclose($pipes[0]);
+        usleep(400000);
+        $status = proc_get_status($webSocketProcess);
+        if (!$status['running']) {
+            echo '| WebSocket server crashed' . PHP_EOL;
+            echo '-----------------------------------------------------' . PHP_EOL;
+            //die();
+            // Retry websocket
+            run_ebot_WS($config, $descriptorspec);
+        }
+        echo "| WebSocket has been started" . PHP_EOL;
+    }
+}
 echo '-----------------------------------------------------' . PHP_EOL;
 
 $loggerData = new LoggerArray();
