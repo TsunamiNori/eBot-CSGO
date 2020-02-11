@@ -174,9 +174,8 @@ udpServer.on('listening', function () {
 });
 
 udpServer.on('message', function (message, remote) {
-    console.log(message.toString('hex').match(/../g).join(' '));
-    console.log(message.toString());
-    var messageObject, body, data = {};
+    var messageObject, body;
+    var data = {};
     try {
         messageObject = JSON.parse(message);
         body = messageObject.data;
@@ -185,13 +184,22 @@ udpServer.on('message', function (message, remote) {
             return;
         }
     } catch (e) {
-        var msg = message.toString('ascii').slice(5, -1);
+        var msg = message.toString('ascii');
+        try{
+            messageObject = JSON.parse(msg.slice(5, -1));
+            body = messageObject.data;
+            data = JSON.parse(body);
+            if (data.message == "ping") {
+                return;
+            }
+        }catch(e){
+            messageObject = JSON.parse(message);
+            body = messageObject.data;
+            data = JSON.parse(body);
+            if (data.message == "ping") {
+                return;
+            }
 
-        messageObject = JSON.parse(msg);
-        body = messageObject.data;
-        data = JSON.parse(body);
-        if (data.message == "ping") {
-            return;
         }
     }
     if (messageObject != null) {
