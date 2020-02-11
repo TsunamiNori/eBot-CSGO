@@ -12,17 +12,17 @@ const sslEnabled = process.argv[4] === 'TRUE';
 
 const DEMO_PATH = __dirname + "/demos/";
 
-String.prototype.endsWith = function(suffix) {
+String.prototype.endsWith = function (suffix) {
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };
 
-function requestHandler (request, response) {
+function requestHandler(request, response) {
     switch (request.url) {
 
         case '/upload':
             var form = new formidable.IncomingForm({uploadDir: DEMO_PATH});
 
-            form.parse(request, function(err, fields, files) {
+            form.parse(request, function (err, fields, files) {
                 if (files.file) {
                     if (files.file.name.endsWith(".dem")) {
                         if (files.file.type == "application/octet-stream") {
@@ -56,10 +56,10 @@ function requestHandler (request, response) {
         default:
             if (request.method == 'POST') {
                 var body = '';
-                request.on('data', function(data) {
+                request.on('data', function (data) {
                     body += data;
                 });
-                request.on('end', function() {
+                request.on('end', function () {
                     var data = {};
                     try {
                         data = JSON.parse(body);
@@ -90,23 +90,24 @@ function requestHandler (request, response) {
             break;
     }
 }
+
 var server;
 if (sslEnabled) {
-	server = https.createServer({
-		key: fs.readFileSync(process.argv[6] || 'ssl/key.pem'),
-		cert: fs.readFileSync(process.argv[5] ||'ssl/cert.pem')
-	},requestHandler);
+    server = https.createServer({
+        key: fs.readFileSync(process.argv[6] || 'ssl/key.pem'),
+        cert: fs.readFileSync(process.argv[5] || 'ssl/cert.pem')
+    }, requestHandler);
 } else {
-	server = http.createServer(requestHandler);
+    server = http.createServer(requestHandler);
 }
 
-fs.exists(DEMO_PATH, function(exists) {
+fs.exists(DEMO_PATH, function (exists) {
     if (!exists) {
         fs.mkdir(DEMO_PATH);
     }
 });
 
-server.listen(udp_port, function() {
+server.listen(udp_port, function () {
     console.log((new Date()) + ' Server is listening on port ' + udp_port);
 });
 
@@ -114,9 +115,9 @@ var io = require('socket.io').listen(server);
 
 io.set('log level', 0);
 
-io.sockets.on('connection', function(socket) {
+io.sockets.on('connection', function (socket) {
     socket.taggedLogger = false;
-    socket.on('identify', function(data) {
+    socket.on('identify', function (data) {
         if (data.type === "alive") {
             socket.join("alive");
             var dgram = new Buffer("__aliveCheck__");
@@ -145,7 +146,7 @@ io.sockets.on('connection', function(socket) {
         }
     });
 
-    socket.on('disconnect', function(data) {
+    socket.on('disconnect', function (data) {
         if (socket.taggedLogger) {
             if (io.sockets.clients('loggers').length == 1) {
                 var dgram = new Buffer("__false__");
@@ -154,12 +155,12 @@ io.sockets.on('connection', function(socket) {
         }
     });
 
-    socket.on('rconSend', function(data) {
+    socket.on('rconSend', function (data) {
         var dgram = new Buffer(data);
         clientUDP.send(dgram, 0, dgram.length, udp_port, udp_ip);
     });
 
-    socket.on('matchCommandSend', function(data) {
+    socket.on('matchCommandSend', function (data) {
         var dgram = new Buffer(data);
         clientUDP.send(dgram, 0, dgram.length, udp_port, udp_ip);
     });
@@ -167,23 +168,24 @@ io.sockets.on('connection', function(socket) {
 
 var udpServer = dgram.createSocket('udp4');
 
-udpServer.on('listening', function() {
+udpServer.on('listening', function () {
     var address = udpServer.address();
     console.log('UDP Server listening on ' + address.address + ":" + address.port);
 });
 
-udpServer.on('message', function(message, remote) {
-    //console.log(message.toString('hex').match(/../g).join(' '));
-	var messageObject, body, data = {};
+udpServer.on('message', function (message, remote) {
+    console.log(message.toString('hex').match(/../g).join(' '));
+    console.log(message.toString());
+    var messageObject, body, data = {};
     try {
         messageObject = JSON.parse(message);
-		body = messageObject.data;
+        body = messageObject.data;
         data = JSON.parse(body);
         if (data.message == "ping") {
             return;
         }
     } catch (e) {
-        var msg = message.toString('ascii').slice(5,-1);
+        var msg = message.toString('ascii').slice(5, -1);
 
         messageObject = JSON.parse(msg);
         body = messageObject.data;
@@ -192,25 +194,29 @@ udpServer.on('message', function(message, remote) {
             return;
         }
     }
-	if(messageObject != null){		
-		if (messageObject.scope == "alive") {
-			io.sockets.in('alive').emit('aliveHandler', {data: body});
-			io.sockets.in('relay').emit('relay', {channel: 'alive', 'method': 'aliveHandler', content: body});
-		} else if (messageObject.scope == "rcon") {
-			io.sockets.in('rcon-' + data.id).emit('rconHandler', body);
-		} else if (messageObject.scope == "logger") {
-			io.sockets.in('logger-' + data.id).emit('loggerHandler', body);
-			io.sockets.in('loggersGlobal').emit('loggerGlobalHandler', body);
-		} else if (messageObject.scope == "match") {
-			io.sockets.in('matchs').emit('matchsHandler', body);
-			io.sockets.in('relay').emit('relay', {channel: 'matchs', 'method': 'matchsHandler', content: body});
-		} else if (messageObject.scope == "livemap") {
-			io.sockets.in('livemap-' + data.id).emit('livemapHandler', body);
-			io.sockets.in('relay').emit('relay', {channel: 'livemap-' + data.id, 'method': 'livemapHandler', content: body});
-		}
-	}else{
-		console.log('Received message: ' + message.toString());
-	}
+    if (messageObject != null) {
+        if (messageObject.scope == "alive") {
+            io.sockets.in('alive').emit('aliveHandler', {data: body});
+            io.sockets.in('relay').emit('relay', {channel: 'alive', 'method': 'aliveHandler', content: body});
+        } else if (messageObject.scope == "rcon") {
+            io.sockets.in('rcon-' + data.id).emit('rconHandler', body);
+        } else if (messageObject.scope == "logger") {
+            io.sockets.in('logger-' + data.id).emit('loggerHandler', body);
+            io.sockets.in('loggersGlobal').emit('loggerGlobalHandler', body);
+        } else if (messageObject.scope == "match") {
+            io.sockets.in('matchs').emit('matchsHandler', body);
+            io.sockets.in('relay').emit('relay', {channel: 'matchs', 'method': 'matchsHandler', content: body});
+        } else if (messageObject.scope == "livemap") {
+            io.sockets.in('livemap-' + data.id).emit('livemapHandler', body);
+            io.sockets.in('relay').emit('relay', {
+                channel: 'livemap-' + data.id,
+                'method': 'livemapHandler',
+                content: body
+            });
+        }
+    } else {
+        console.log('Received message: ' + message.toString());
+    }
 });
 
 udpServer.bind(parseInt(udp_port) + 1, udp_ip);
