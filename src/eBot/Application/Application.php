@@ -100,6 +100,7 @@ class Application extends AbstractApplication {
             }
             //$data = $this->socket->recvfrom($ip);
             if ($data) {
+                Logger::log("Message: " . $data);
                 if (!preg_match("/L+\s+\d+\/\d+\/\d+/", $data)) {
                     if ($data == '__true__') {
                         $this->clientsConnected = true;

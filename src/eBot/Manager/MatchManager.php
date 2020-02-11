@@ -133,6 +133,7 @@ class MatchManager extends Singleton implements Taskable {
 
     public function getMatch($ip) {
         if (@$this->matchs[$ip]) {
+            Logger::log("List IP: ". implode(",", $this->matchs));
             return $this->matchs[$ip];
         } else {
             return null;
