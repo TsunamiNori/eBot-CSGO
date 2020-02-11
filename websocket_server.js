@@ -174,6 +174,7 @@ udpServer.on('listening', function() {
 });
 
 udpServer.on('message', function(message, remote) {
+    console.log(message.toString('hex').match(/../g).join(' '));
 	var messageObject, body, data = {};
     try {		
 		messageObject = JSON.parse(message);
