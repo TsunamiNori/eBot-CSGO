@@ -175,8 +175,9 @@ udpServer.on('listening', function() {
 udpServer.on('message', function(message, remote) {
     console.log(message.toString('hex').match(/../g).join(' '));
 	var messageObject, body, data = {};
-    try {		
-		messageObject = JSON.parse(message);
+    try {
+        var msg = message.toString('ascii').slice(5,-1);
+        messageObject = JSON.parse(msg);
 		body = messageObject.data;
         data = JSON.parse(body);
         if (data.message == "ping") {
